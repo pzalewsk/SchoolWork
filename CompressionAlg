@@ -1,0 +1,125 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class Compress {
+
+	/**
+	 * This main method will create a Dictionary that is originally filled with
+	 * the 256 ASCII codes. It will then input a file, compress that file, and
+	 * send the compressed output to another file.
+	 * 
+	 */
+	public static void main(String[] args) throws IOException, DictionaryException {
+
+		Dictionary newDict = new Dictionary(4111); // Instantiate a new
+													// Dictionary
+
+		for (int i = 0; i <= 255; i++) { // Fill the Dictionary from 0-255 with
+											// ASCII codes
+
+			char keyChar = (char) i; // Cast to character
+
+			String keyString = Character.toString(keyChar); // Cast to String
+
+			DictEntry pair = new DictEntry(keyString, i); // Create a new
+															// Dictionary entry
+
+			try { // Insert the new entry if its key is not already in the
+					// dictionary
+				newDict.insert(pair);
+			} catch (DictionaryException e) {
+				// TODO Auto-generated catch block
+
+			}
+
+		}
+		String input = args[0];
+		// The Compression Portion of the Class
+		
+		//Instantiate new Input Stream "in"
+		BufferedInputStream in;
+		in = new BufferedInputStream(new FileInputStream(input + ".txt")); 
+		
+		//Instantiate new Output Stream "out"
+		BufferedOutputStream out;
+		out = new BufferedOutputStream(new FileOutputStream(input + ".zzz")); 
+		
+		try {
+
+			// Initialize the Variable to be used in the While Loop
+
+			int nc = 256; // Next open dictionary spot
+			int pb; // Most recent byte that was read
+			String longest = ""; // Longest sequence to date
+			String p = ""; // Output sequence
+			char pbChar; // Char version of pb, need to initialize to something
+			String pbString; // String version of pb
+			MyOutput outputter = new MyOutput(); // Instantiate Myouput object
+
+			while ((pb = in.read()) != -1) {
+
+				pbChar = (char) pb; // Cast pb
+				pbString = Character.toString(pbChar); // Cast pbChar
+				p = longest; // Set p to the longest
+				longest = longest + pbString; // Append newest byte to longest
+				
+				//If string longest is not in the dictionary
+				if (newDict.find(longest) == null) { 
+														
+					// find entry associated to key p
+					DictEntry outputEntry = newDict.find(p); 
+					
+					// Get entry's integer code
+					int code = outputEntry.getCode(); 
+					
+					// Send the code for sequence p to the output file
+					outputter.output(code, out); 
+					
+					 // if table is not full, add "longest" as a new entry 3840 is 4096 - 256 (ACSII )
+					if (nc < 3840) {
+						
+						// Create entry to be added
+						DictEntry addEntry = new DictEntry(longest, nc); 
+						
+						 // Add the new entry to the Dictionary
+						newDict.insert(addEntry);
+													
+						++nc; // increment the next open spot
+
+					}
+					// Set longest to the last byte that was read
+					longest = pbString; 
+
+				}
+
+			}
+			
+
+			//Remove any bits left over in the buffer and send to Output 
+			out.flush();
+			out.close();
+			
+			//Catch any input/output exceptions
+		} catch (IOException e) {
+			e.printStackTrace();
+			
+		} finally {
+			
+			try { //Close the Input reader
+				in.close();
+			}
+			
+			//Catch any input/output exceptions
+			catch (IOException e) {
+				e.printStackTrace();
+
+			}
+
+		}
+
+	}
+
+}
