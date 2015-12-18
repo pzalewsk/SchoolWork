@@ -1,0 +1,165 @@
+/**
+ * This class creates Figure objects based on a number of variables including
+ * the height, width, type, and id. Each figure stores a binary search tree of
+ * pixels. This binary search tree allows us to determine if a figure movement
+ * is valid or invalid, by checking to see if any two figures would intersect due
+ * to the move.
+ *
+ */
+
+public class Figure implements FigureADT {
+	
+	//Create the variables associated to each figure
+	private int id;
+	private int width;
+	private int height;
+	private int type;
+	private Position pos;
+	private BinarySearchTree binTree;
+
+	/**
+	* The constructor for a Figure object. Takes 5 parameters and sets them
+	* to this figure. Also initializes an empty Binary Search Tree.
+	* 
+	* @param id: The figure's identifier
+	* @param width: The width of the enclosing rectangle
+	* @param height: The height of the enclosing rectangle
+	* @param type: The type of figure: fixed, moved by user, moved by computer, target.
+	* @param pos: The offset of the figure
+	*/
+	public Figure(int id, int width, int height, int type, Position pos) {
+		this.id = id;
+		this.width = width;
+		this.height = height;
+		this.type = type;
+		this.pos = pos;
+
+		binTree = new BinarySearchTree();
+
+	}
+	
+	/**
+	 * Setter method for the type of figure
+	 */
+	public void setType(int type) {
+		this.type = type;
+	}
+	
+	/**
+	 * Getter method for the width of a figure
+	 */
+	public int getWidth() {
+
+		return width;
+	}
+	
+	/**
+	 * Getter method for the height of a figure
+	 */
+	public int getHeight() {
+		return height;
+	}
+	
+	/**
+	 * Getter Method for the type of figure
+	 */
+	public int getType() {
+		return type;
+	}
+	
+	/**
+	 * Getter method for the Id of a figure
+	 */
+	public int getId() {
+		return id;
+	}
+	
+	/**
+	 * Getter method for the offset of a figure
+	 */
+	public Position getOffset() {
+		return pos;
+	}
+	
+	/**
+	 * Setter method for the offset of a figure 
+	 */
+	public void setOffset(Position value) {
+		this.pos = value;
+	}
+	
+	/**
+	 * Getter method for the figure's Binary Search Tree
+	 * @return
+	 */
+	private BinarySearchTree getBST() {
+		return this.binTree;
+	}
+
+	/**
+	 * This method adds a pixel to a Binary Search Tree associated with "this"
+	 * figure. If there is any error during insertion, a BST exception is
+	 * thrown.
+	 */
+
+	public void addPixel(int x, int y, int rgb) throws BSTException {
+
+		// Create a new DictEntry using the parameters
+		Position pos = new Position(x, y);
+		DictEntry entry = new DictEntry(pos, rgb);
+
+		// Try inserting a pixel in the Binary Search Tree
+		try {
+			this.getBST().insert(entry);
+
+		} catch (BSTException e) {
+
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * This method will check to see if the figure in the parameter intersects
+	 * with "this" figure. First we check if the rectangles surrounding the
+	 * figures intersect, and if this is the case, we then check if there are
+	 * any pixels that are common between the two figures. If they share any
+	 * pixel in common, the move is invalid and the method returns true, and
+	 * false otherwise.
+	 */
+
+	public boolean intersects(Figure fig) {
+	//check if they have a pixel in common
+
+			DictEntry entry = this.getBST().smallest(); // Start traversal at
+														// smallest
+
+			while (entry != null) { // until you've hit the root
+
+				// xPrime is (x + xf - xf')
+				int xprime = entry.getPosition().getX() + this.getOffset().getX() - fig.getOffset().getX();
+
+				// yPrime is (y+yf-yf')
+				int yprime = entry.getPosition().getY() + this.getOffset().getY() - fig.getOffset().getY();
+
+				Position p = new Position(xprime, yprime);
+
+				// Check to see if the current pixel of "entry" has a match in
+				// "fig"
+				DictEntry entry2 = fig.getBST().find(p);
+
+				if (entry2 != null) {
+					return true; // figures overlap, move isn't valid
+				}
+
+				// Go to the next largest node in the tree
+				entry = this.getBST().successor(entry.getPosition());
+
+			}
+
+		
+
+		return false; // Figures didn't overlap, move is valid
+
+	}
+}
