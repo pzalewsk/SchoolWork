@@ -1,0 +1,241 @@
+import java.awt.Color;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Stack;
+
+/**
+ * This class creates Map objects which will store store the path that
+ * the bus will take from the starting point to the destination. 
+ * @author Patrick Zalewski
+ *
+ */
+public class Map {
+
+
+	private Node startingPoint; //Initial location
+	private Node endingPoint;	//Final Location
+	private Graph graph;				//Structure behind the Map
+	private int gridSize;
+	private int mapWidth;
+	private int mapLength;
+	private int busChanges;		//Number of bus lines
+	private Stack<Node> visited = new Stack<Node>(); // keep track of all nodes that
+												// have been visited
+	
+	
+	/**
+	 * This is the constructor for a Map object, it takes in an input file and
+	 * uses the Graph class to store the input inside of an adjacency Matrix.
+	 * This is done by reading the file line by line, and creating edges whenever
+	 * vertex characters are seperated by an edge character. The object created
+	 * from this class will be used in the findPath() method.
+	 * 
+	 * @param inputFile: file to be read
+	 * @throws MapException: If any map operations are invalid
+	 */
+	public Map(String inputFile) throws MapException {
+	
+		try {
+			//Create a reader for the input file
+			BufferedReader input;
+			input = new BufferedReader(new FileReader(inputFile));
+			// Process first four lines of the file
+			gridSize = Integer.parseInt(input.readLine());
+			mapWidth = Integer.parseInt(input.readLine());
+			mapLength = Integer.parseInt(input.readLine());
+			busChanges = Integer.parseInt(input.readLine());
+			
+			//initialize the graph
+			graph = new Graph(mapWidth * mapLength);
+
+			int i, row = 0;
+			String line;
+			
+			// Read the map from the file
+			for (;;) {
+				line = input.readLine();
+				//Reached the end of the file
+				if (line == null) { 
+					input.close();
+					break;
+				}
+				//If it is an even row
+				if (row % 2 == 0) {
+					//
+					for (i = 0; i < 2 * mapWidth - 1; i++) {
+						//save char at that position to c
+						char c = line.charAt(i);
+						
+						// Check to see what kind of char it is
+						switch (c) { 
+
+						case '0': //The node at current position is the start node
+							startingPoint = graph.getNode((row / 2) * mapWidth + (i / 2));
+							break;
+
+						case '1'://The node at current position is the end node
+							endingPoint = graph.getNode((row / 2) * mapWidth + (i / 2));
+							break;
+
+						case ' ': //ignore spaces
+							break;
+
+						case '+': //ignore nodes, they are already in graph
+							break;
+
+						default://You have reached a letter. Create an edge between the nodes adjacent to it 
+							graph.insertEdge(graph.getNode((row / 2) * mapWidth + ((i / 2))),
+									graph.getNode((row / 2) * mapWidth + ((i / 2) + 1)), Character.toString(c));
+							break;
+						}
+					}
+					
+				}
+				//You are at an odd row
+				else {
+					for (i = 0; i < 2 * mapWidth - 1; ++i) {
+						//Save the char at the current position into c
+						char c = line.charAt(i);
+						
+						//Check what type of char it is
+						switch (c) {
+						case '0'://The node at current position is the start node
+							startingPoint = graph.getNode((row / 2) * mapWidth + (i / 2));
+							break;
+
+						case '1'://The node at current position is the end node
+							endingPoint = graph.getNode((row / 2) * mapWidth + (i / 2));
+							break;
+
+						case ' ': //ignore the spaces
+							break;
+
+						case '+':	//ignore nodes, they are already in the graph
+							break;
+
+						default: //You have reached a letter. Create an edge between the nodes adjacent to it 
+							graph.insertEdge(graph.getNode(((row / 2) ) * mapWidth + (i / 2)),
+									graph.getNode(((row / 2) + 1) * mapWidth + (i / 2)), Character.toString(c));
+							break;
+
+						} // switch
+
+					}// else
+
+				} // inner for loop
+				++row;
+			} // outer for loop
+
+		} // try
+		catch (Exception e) {
+			System.out.println("Error reading input file " + e.getMessage());
+		}
+	}
+	
+	/**
+	 * This method returns the graph associated to the Map of interest.
+	 * @return: The graph structure behind the map
+	 * @throws MapException:If the graph is not exisitent
+	 */
+	public Graph getGraph() throws MapException {
+		//Graph is empty
+		if (graph == null) {
+			throw new MapException("invalid Map");
+		} else //graph is filled with data
+			return graph;
+	}
+
+	@SuppressWarnings("rawtypes")
+	
+	/**
+	 * This method finds the path from the starting vertex to the end vertex.
+	 * It uses a helper method which takes in the starting vertex and destination
+	 * vertex as parameters. Each vertex along the path is added to a stack and if
+	 * the method reaches the end vertex, the recursion stops and the stack is 
+	 * returned as an iterator.
+	 * 
+	 * @return: Iterator with the path from start vertex to the end vertex
+	 */
+	public Iterator findPath() {
+		
+		//The result from the helper method
+		boolean isPath = findPath(startingPoint, endingPoint);
+
+		//If a path was found between between the start at end vertex
+		if (isPath == true){
+			return visited.iterator();
+		}
+		
+		else //No path was found
+			
+			return null;
+
+	}
+
+	private boolean findPath(Node begin, Node end) {
+		
+		try {
+		
+		
+			process(begin); // mark current node as visited
+			
+			visited.push(begin); // add it to the stack
+			
+			//If you are at the endpoint return 
+			if (begin == end){
+				return true;
+			}
+			//Save the incident edges of the current node to an iterator
+			Iterator<Edge> path = graph.incidentEdges(begin);
+
+			// while current node has adjacent nodes
+			while (path.hasNext()) {
+
+				// Next edge in the iterator
+				Edge current = path.next();
+
+				// If the adjacent node of be is not marked, call function
+				// recursively
+				if (current.secondEndpoint().getMark() == false) {
+					//Make recursive call with the next node
+					if (findPath(current.secondEndpoint(), endingPoint) == true) {
+						return true;
+
+					}
+				}
+			}
+				// If you get to here it means that the adjacent node is already
+				// marked. Pop the current node off of the stack, unmark it
+
+				unprocess(begin);
+				visited.pop();		
+				
+				
+			
+
+		} catch (GraphException e) {
+			e.printStackTrace();
+		}
+		//Path was not found
+		return false;
+
+	}
+	/**
+	 * This method processes the vertex my marking it as visited
+	 * @param u: Node to mark
+	 */
+	private void process(Node u) {
+		u.setMark(true);
+	}
+	/**
+	 * This method processes the vertex my marking it as unvisited
+	 * @param u: Node to unmark
+	 */
+	private void unprocess(Node u) {
+		u.setMark(false);
+	}
+
+}
