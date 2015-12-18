@@ -1,0 +1,205 @@
+/**
+ * This class creates Dictionary objects. The backbone of each Dictionary is an
+ * array of linked lists. The linked lists are maintained by sotring each entry
+ * into a Node and having each Node reference a "next" Node. Insertion, Removal,
+ * Find can all be performed on a Dictionary, and the number of elements in the
+ * Dictionary can be easily returned by calling the numElements() method.
+ * 
+ * @author Patrick Zalewski
+ *
+ */
+public class Dictionary implements DictionaryADT {
+
+	// Global Variables for all Dictionary objects
+	private int size;
+	private Node[] hashTable;
+	private int numOfElements;
+
+	/**
+	 * Constructor for Dictionary objects. Takes the size of the dictionary as a
+	 * parameter and initializes all spots in the hash table as null
+	 * 
+	 * @param size
+	 *            : The number of spots in the Dictionary
+	 */
+	public Dictionary(int size) {
+		hashTable = new Node[size];
+		for (int i = 0; i < size; i++)
+			hashTable[i] = null;
+		this.size = size;
+	}
+
+	/**
+	 * This method takes a DictEntry object as a parameter which contains a
+	 * Stirng key and an integer code. Using the hash function and the find
+	 * method, the insert method first checks to make sure the key to insert is
+	 * not already in the table. If it is, it throws an exception, if not the
+	 * DictEntry is stored in the first position of the linked list at value
+	 * hashTable[hashValue]. This method returns the value produced by the hash
+	 * function.
+	 */
+	public int insert(DictEntry pair) throws DictionaryException {
+
+		/*
+		 * Find the hash value, use find method to retrieve the entry at the
+		 * tableLocation in question.
+		 */
+
+		int hashValue = hashFunction(pair.getKey(), pair.getKey().length(), size, 41);
+		DictEntry findKey = find(pair.getKey());
+		Node newEntry = new Node(pair.getKey(), pair.getCode());
+
+		int collision = 0;
+
+		/*
+		 * Check if this spot in the table has an entry that has the identical
+		 * key in it. If it does, throw and exception.
+		 */
+		if (findKey != null) {
+			throw new DictionaryException("The Key Value Is Already In The Table");
+
+		}
+		/*
+		 * The key is not already in the table to insert in appropriate location
+		 * and change its next pointer to point to the entry that used to be in
+		 * that spot.
+		 */
+
+		else {
+
+			Node head = hashTable[hashValue];
+			Node temp = head;
+			hashTable[hashValue] = newEntry;// Assign the new entry to table
+											// location based on hash value
+			newEntry.setNext(head);
+			numOfElements++;
+
+			if (temp == null)
+				collision = 0;
+			else
+				collision = 1;
+
+		}
+
+		return collision;
+
+	}
+
+	/**
+	 * The remove method searches for a specific key in the table with the find
+	 * method. If it is not found, the method throws an exception. Otherwise,
+	 * the method adjusts the pointers of the entry to remove so that it is no
+	 * longer referenced in the table. This method returns no value.
+	 */
+	public void remove(String key) throws DictionaryException {
+
+		/*
+		 * Check if the key is in the dictionary, if not, then throw an
+		 * exception
+		 */
+		DictEntry findKey = find(key);
+
+		if (findKey == null) {
+			throw new DictionaryException("The Key You are Trying To Delete Is Not In The Table");
+		}
+
+		/*
+		 * The key is in the dictionary, so remove it by adjusting its next
+		 * pointer and the next pointer of the node that is in front of it in
+		 * linked list.
+		 */
+		else {
+			int position = hashFunction(key, key.length(), size, 41);
+			Node headOfList = hashTable[position];
+
+			Node prev = null;
+			Node curr = headOfList;
+
+			// Traverse list until you find the key
+			while (curr.getEntry().getKey() != key) {
+				prev = curr; // Make the prev the current node
+				curr = curr.getNext(); // Make current the next node in the list
+			}
+			if (prev == null) { // Key is the head of list
+
+				// Make the entry after key the new head of the list
+				curr = curr.getNext();
+
+				numOfElements--; // Decrements the number of elements in table
+
+			} else {
+				prev.setNext(curr.getNext()); // Key is not at head of list
+				numOfElements--; // Decrements the number of elements in table
+			}
+		}
+
+	}
+
+	/**
+	 * This method uses a key String to search through the Dictionary to find a
+	 * Dictionary entry of interest. It finds the Linked List which should
+	 * contain the entry, and then iterates over the list until it either finds
+	 * the entry and returns it, or it returns null.
+	 */
+	public DictEntry find(String key) {
+
+		// Find the position of the key you're looking for
+		int position = hashFunction(key, key.length(), size, 41);
+
+		// Create a new Dictionary Entry called list
+		Node list = hashTable[position];
+
+		// Loop until you reach null or reach the key you're looking for
+		while ((list != null) && (list.getEntry().getKey().compareTo(key) != 0)) {
+
+			// You didn't find key so try the next item in list
+			list = list.getNext();
+		}
+		// If you have traversed the whole list and can't find the key
+		if (list == null) {
+			return null;
+		}
+		// You have found the key, now you return it
+		else {
+			return list.getEntry();
+		}
+	}
+
+	/**
+	 * This method returns the number of elements in the table. This is value is
+	 * updated in the insert and remove method. It is incremented when a new
+	 * entry is added and is decremented when one is removed.
+	 */
+	public int numElements() {
+		return numOfElements;
+
+	}
+
+	/**
+	 * The Hash Function creates an integer value that represents the location
+	 * where a Dictionary entry will be stored within the array. This function
+	 * reads through the key String and passes each character through an
+	 * expression and then takes the remainder. You need to mod tableSize in
+	 * order to get an integer that is within the table size.
+	 * 
+	 * @param wordString: The key String
+	 * @param stringLength: Length of the key String
+	 * @param tableSize : Size of the Dictionary
+	 * @param a : Constant Prime Number
+	 * @return The location where the associated key is stored in Dictionary
+	 */
+	public int hashFunction(String wordString, int stringLength, int tableSize, int a) {
+		//Last character in the String
+		int tableLocation = (int) wordString.charAt(stringLength - 1); 
+
+		// Loop through the remainder of characters in the String
+		for (int i = stringLength - 2; i >= 0; i--) {
+			tableLocation = (((int) wordString.charAt(i)) + (tableLocation * a) + tableLocation) % tableSize;
+
+		}
+		// Return the location of the entry
+		return tableLocation;
+
+	}
+
+}
