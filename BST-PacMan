@@ -1,0 +1,400 @@
+/**
+ * This class implements the Binary Search Tree data structure with the
+ * following methods :find(),insert(), remove(), successor(), predecessor(),
+ * smallest(), largest(). The class also implements a few helper methods such as
+ * isALeaf() and getSize().
+ * 
+ * @author Patrick Zalewski
+ *
+ */
+public class BinarySearchTree {
+
+	private Node root;// The root node of the BST
+	private int size; // Number of nodes in the tree
+
+	/**
+	 * Constructor for a Binary Search Tree where the tree initialized as having
+	 * one entry, which is a leaf (null entry).
+	 */
+
+	public BinarySearchTree() {
+
+		root = new Node(null, null, null, null); // Creates Empty Tree
+	}
+
+	/**
+	 * This find method uses the other find method in order to return a specific
+	 * DictEntry rather than a Node.
+	 * 
+	 * @param key
+	 *            : A position made of an x and y coordinate.
+	 * @return The DictEntry that contains that key, or the entry where it
+	 *         should have been.
+	 */
+
+	public DictEntry find(Position key) {
+
+		Node finder = find(root, key);
+
+		return finder.getDictEntry();
+
+	}
+
+	/**
+	 * The find method searches through the Binary Search Tree starting at the
+	 * root and looks for the position key that is the parameter. It uses the
+	 * compareTo method to determine whether to move left or right down the tree
+	 * based on the value of the key.
+	 * 
+	 * @param root
+	 *            : The root of the Binary Search Tree.
+	 * @param k
+	 *            : A point coordinate stored in the Binary Search Tree.
+	 * @return: A Node containing the DictEntry which contains the parameter key
+	 *          or the Node where the key should have been.
+	 */
+	private Node find(Node root, Position k) {
+
+		if (isALeaf(root))
+			return root; // There is only one node, so return it.
+
+		else {
+
+			Node p = root;
+
+			// Move down the tree until you get to a leaf
+			while (isALeaf(p) == false) {
+
+				// if you find the position k, return the Node that contains it.
+				if (p.getDictEntry().getPosition().compareTo(k) == 0) {
+					return p;
+
+					// if the current key is bigger than position k
+				} else if (p.getDictEntry().getPosition().compareTo(k) == 1) {
+					p = p.getLeftChild();
+
+					// if the current key is smaller than position k
+				} else {
+					p = p.getRightChild();
+				}
+			}
+
+			return p; // return the Node where position k should be
+		}
+
+	}
+
+	/**
+	 * This method checks to see whether or not the node in question is a leaf
+	 * 
+	 * @param root
+	 *            : The root of the Binary Search Tree
+	 * @return: Return true if it is a leaf, and false otherwise.
+	 */
+	private boolean isALeaf(Node root) {
+
+		// If the node is a leaf
+		if ((root.getRightChild()) == null && (root.getLeftChild() == null)) {
+			return true;
+			// Node is not a leaf
+		} else
+			return false;
+	}
+
+	/**
+	 * This method will insert a new node into the Binary Search Tree. The
+	 * method first searches through the tree and checks to see if the DictEntry
+	 * to insert is already in the tree. If this is the case, A BST Exception is
+	 * thrown. Otherwise, a new DictEntry is inserted into the node returned by
+	 * the find method.
+	 * 
+	 * @param data
+	 *            : The DictEntry to be inserted into the Binary Search Tree
+	 * @throws BSTException
+	 *             : Exception thrown if the entry to be inserted is already in
+	 *             the tree.
+	 */
+
+	public void insert(DictEntry data) throws BSTException {
+
+		Node p;
+		// store node returned from find method into p
+		p = find(root, data.getPosition());
+
+		// If the tree is empty, add the entry and make it the root. Create its
+		// children
+		if (getSize() == 0) {
+			Node leftChild = new Node(null, root, null, null);
+			Node rightChild = new Node(null, root, null, null);
+			root.setNewEntry(data);
+			root.setLeftChild(leftChild);
+			root.setRightChild(rightChild);
+
+			size++;
+
+			// If the DictEntry to add was already in the tree, throw
+			// BSTException
+		} else if (isALeaf(p) == false) {
+			throw new BSTException("Cannot insert, value is already in Tree");
+
+			// The DictEntry is not in the tree, so add it and create its
+			// children
+		} else {
+			Node leftChild2 = new Node(null, p, null, null);
+			Node rightChild2 = new Node(null, p, null, null);
+			p.setNewEntry(data);
+
+			p.setLeftChild(leftChild2);
+			p.setRightChild(rightChild2);
+
+			size++;
+		}
+
+	}
+
+	/**
+	 * This method looks through the Binary Search Tree and finds the node to be
+	 * deleted and then removes it by adjusting the link between it and its
+	 * parent. The way the node is removed depends on whether both its children
+	 * are internal or if its left child is a leaf.
+	 * 
+	 * @param key
+	 *            : The position which is associated to the node we are trying
+	 *            to delete.
+	 * @throws BSTException
+	 *             : Exception thrown if the position we are looking for isn't
+	 *             in the tree.
+	 */
+	public void remove(Position key) throws BSTException {
+		// Find the node to delete
+		Node p = find(root, key);
+
+		// If you don't find the key in the tree, throw an exception
+		if (isALeaf(p)) {
+			throw new BSTException("Cannot remove, that key is not in the Tree");
+		}
+
+		else {
+			Node leftChild = p.getLeftChild();
+			Node rightChild = p.getRightChild();
+
+			// If the node's left child is a leaf.
+			if (isALeaf(leftChild)) {
+
+				// If the node is the root and its left child is a leaf.
+				if (p == root) {
+					root = rightChild;
+					root.setParent(null);
+					size--;
+
+					// The node's left child is a leaf but node is not the root.
+				} else {
+
+					Node pParent = p.getParent();
+
+					// If the node is the left child of its parent.
+					if (p == pParent.getLeftChild()) {
+						pParent.setLeftChild(rightChild);
+						size--;
+
+						// If the node is the right child of its parent.
+					} else {
+						pParent.setRightChild(rightChild);
+						size--;
+					}
+				}
+
+			}
+			// The node's children are both internal.
+			else {
+
+				// Find the smallest value in the node's right subtree.
+				Node q = smallestNode(p.getRightChild());
+				p.setNewEntry(q.getDictEntry());
+
+				Node pParent2 = q.getParent();
+
+				// If the smallest node is the left child of its parent.
+				if (q == pParent2.getLeftChild()) {
+					pParent2.setLeftChild(q.getRightChild());
+					size--;
+				}
+
+				// The smallest node is the right child of its parent
+				else {
+					pParent2.setRightChild(q.getRightChild());
+					size--;
+				}
+			}
+		}
+	}
+
+	/**
+	 * This method compares the key parameter to the other nodes in the tree and
+	 * finds the next largest key. This is done by first finding the key of
+	 * interest in the tree. If the right child of the key is internal, you
+	 * return the smallest value in the its right child's tree. Otherwise, you
+	 * traverse upward in the tree until you reach a node that is the left child
+	 * of its parent.
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public DictEntry successor(Position key) {
+
+		// Check if the root is internal
+		if (isALeaf(root))
+			return null;
+
+		// Search for the key
+		Node p = find(root, key);
+
+		// If p's right child is internal return the smallest value in its right
+		// subtree
+		if (isALeaf(p.getRightChild()) == false)
+			return smallestNode(p.getRightChild()).getDictEntry();
+
+		// You are at leaf, so traverse upwards until you reach Node that is a
+		// left child
+		else {
+			Node pParent = p.getParent();
+
+			// Stops looping once you get to root or you get to a left child
+			while ((pParent != null) && (p == pParent.getRightChild())) {
+				p = pParent;
+				pParent = pParent.getParent();
+			}
+
+			// You've gotten to the root
+			if (pParent == null)
+				return null;
+
+			// You have gotten to a Node who is the left child of its parent
+			else
+				return pParent.getDictEntry(); // Return the value at pp
+		}
+	}
+
+	/**
+	 * This method compares the key parameter to the other Nodes in the tree and
+	 * finds the next smallest key. It accomplishes this task by first using the
+	 * find method to locate the Node containing the key of interest. If its
+	 * left child is not a leaf, the method returns the left child. Otherwise,
+	 * the method starts to move back up the tree until it hits the root or
+	 * until it reaches a Node that
+	 * 
+	 * @param key
+	 *            : Position coordinate
+	 * @return: Null if the the root is a leaf. Otherwise, the predecessor of
+	 *          the Node which stores the key parameter
+	 */
+	public DictEntry predecessor(Position key) {
+
+		// Is the root a leaf?
+		if (isALeaf(root))
+			return null;
+
+		// Find the Node containing the position in parameter
+		Node p = find(root, key);
+
+		// Return p's left child if the left child is not a leaf
+		if (isALeaf(p.getLeftChild()) == false)
+			return p.getLeftChild().getDictEntry();
+
+		// p's left child is a leaf, climb back up the tree
+		else {
+			Node pParent = p.getParent();
+
+			/*
+			 * Climb up the tree until you hit the root or you get to a Node
+			 * that is the right child of its parent
+			 */
+			while ((pParent != null) && (p == pParent.getLeftChild())) {
+				p = pParent;
+				pParent = pParent.getParent();
+			}
+
+			// If you get to the root
+			if (pParent == null)
+				return null;
+
+			// You hit a node that is a right child
+			else
+				return pParent.getDictEntry();
+		}
+
+	}
+
+	/**
+	 * This method returns the DictEntry that contains the smallest value
+	 * (position). This method calls a helper method (smallestNode).
+	 * 
+	 * @return: The DictEntry containing the smallest value in the tree
+	 */
+	public DictEntry smallest() {
+
+		// Call the helper method
+		Node p = smallestNode(root);
+
+		return p.getDictEntry();
+	}
+
+	/**
+	 * This method is a helper method for finding the smallest value in the
+	 * Binary Search Tree. In order to find the smallest value, the method
+	 * continuously goes to the left child of the current node until it reaches
+	 * a leaf.
+	 * 
+	 * @param root: Root of the Binary Search Tree
+	 * @return: the Node that contains the smallest value.
+	 */
+	private Node smallestNode(Node root) {
+		
+		//Is the root a leaf?
+		if (isALeaf(root)) {
+			return null;
+		}
+		Node p = root;
+		
+		//Find the left-most Node in the tree
+		while (isALeaf(p) == false) {
+			p = p.getLeftChild();
+		}
+		
+		//Return the return the parent once you get to a leaf
+		return p.getParent();	
+	}
+	
+	/**
+	 * This method finds the largest value in the Binary Search Tree. In order
+	 * to find the largest value, the method continuously goes to the right 
+	 * child of the current Node until it reaches a leaf.
+	 * 
+	 * @return: The DictEntry that contains the largest Node.
+	 */
+	public DictEntry largest() {
+
+		Node p = root;
+		
+		//Is the root a leaf?
+		if (isALeaf(p)) {
+			return null;
+		}
+		
+		//Traverse down to the right-most Node
+		while (!isALeaf(p)) {
+			p = p.getRightChild();
+		}
+		//Return the Dict Entry stored in the parent of leaf
+		return p.getParent().getDictEntry();
+	}
+	
+	/**
+	 * Getter method for the number of Nodes in the tree.
+	 * 
+	 */
+	private int getSize() {
+		return this.size;
+	}
+
+}
